@@ -34,7 +34,7 @@ set(TENSORRT_LIBRARY ${TENSORRT_LIBRARY_INFER} ${TENSORRT_LIBRARY_ONNXPARSER})
 # OpenCV
 find_package(OpenCV REQUIRED)
 
-add_library(yolov5 SHARED yolov5.cpp)
+add_executable(yolov5 yolov5.cpp)
 target_include_directories(
     yolov5 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
