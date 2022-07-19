@@ -4,7 +4,7 @@ Minimal code for YOLO v5 inference with TensorRT (C++).
 ## Prerequisites
 
 To build and run this program, the following items are required.
-- a CUDA compatable GPU card
+- a CUDA compatible GPU card
 - NVIDIA driver: 470.82.01 or higher
 - NVIDIA CUDA: 11.4.3
 - NVIDIA cuDNN: 8.2.1
