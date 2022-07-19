@@ -11,7 +11,7 @@ To build and run this program, the following items are required.
 - NVIDIA TensorRT: 8.2.5.1
 - OpenCV: 4.5.4
 - cmake: 3.16 or higher
-- an exported yolov5s ONNX model file
+- an exported yolov5s TensorRT engine file
 
 ## Install
 
