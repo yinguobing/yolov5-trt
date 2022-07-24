@@ -22,8 +22,8 @@ void Logger::log(Severity severity, const char* msg) noexcept
 
 Logger logger;
 
-// A helper function to calcualte memory useage
-size_t get_memeory_size(const nvinfer1::Dims& dims, const int32_t elem_size)
+// A helper function to calculate memory usage
+size_t get_memory_size(const nvinfer1::Dims& dims, const int32_t elem_size)
 {
     return std::accumulate(dims.d, dims.d + dims.nbDims, 1, std::multiplies<int64_t>()) * elem_size;
 }
@@ -35,12 +35,12 @@ struct Result {
     int class_id;
 };
 
-int run(std::string engile_file_path, std::string image_file_path)
+int run(std::string engine_file_path, std::string image_file_path)
 {
     /* PART I: Initialize the YOLOV5 model */
 
     // 读取engine文件载入模型
-    std::ifstream engine_file(engile_file_path, std::ios::binary);
+    std::ifstream engine_file(engine_file_path, std::ios::binary);
     if (engine_file.fail()) {
         std::cout << "Failed to read model file." << std::endl;
         return -1;
@@ -80,7 +80,7 @@ int run(std::string engile_file_path, std::string image_file_path)
     nvinfer1::Dims4 input_dims { 1, channels, height, width };
     context->setBindingDimensions(input_idx, input_dims);
 
-    size_t input_mem_size = get_memeory_size(input_dims, sizeof(float));
+    size_t input_mem_size = get_memory_size(input_dims, sizeof(float));
     void* cuda_mem_input { nullptr };
     if (cudaMalloc(&cuda_mem_input, input_mem_size) != cudaSuccess) {
         std::cout << "ERROR: input cuda memory allocation failed, size = " << input_mem_size << " bytes" << std::endl;
@@ -91,21 +91,21 @@ int run(std::string engile_file_path, std::string image_file_path)
     // Allocate CUDA memory for output bindings
     std::vector<std::string> output_node_names { "339", "392", "445", "output" };
     std::vector<size_t> output_mem_sizes;
-    bool output_mem_inited = true;
+    bool output_mem_initialized = true;
     for (size_t i = 0; i < output_node_names.size(); i++) {
         int32_t output_idx = mEngine->getBindingIndex(output_node_names[i].c_str());
         if (output_idx == -1) {
             std::cout << "ERROR: failed to get output by name: " << output_node_names[i] << std::endl;
-            output_mem_inited = false;
+            output_mem_initialized = false;
             break;
         }
         auto output_dims = context->getBindingDimensions(output_idx);
-        auto output_size = get_memeory_size(output_dims, sizeof(float));
+        auto output_size = get_memory_size(output_dims, sizeof(float));
         output_mem_sizes.push_back(output_size);
         void* cuda_mem_output { nullptr };
         if (cudaMalloc(&cuda_mem_output, output_size) != cudaSuccess) {
             std::cout << "ERROR: output cuda memory allocation failed, size = " << output_size << " bytes" << std::endl;
-            output_mem_inited = false;
+            output_mem_initialized = false;
             break;
         } else {
             bindings[1 + i] = cuda_mem_output;
@@ -113,7 +113,7 @@ int run(std::string engile_file_path, std::string image_file_path)
     }
 
     // 一旦输出内存申请失败怎么办
-    if (!output_mem_inited) {
+    if (!output_mem_initialized) {
         for (auto p : bindings) {
             cudaFree(p);
         }
@@ -144,7 +144,7 @@ int run(std::string engile_file_path, std::string image_file_path)
         }
     }
 
-    // Memeory copy: CPU-MEM to GPU-MEM
+    // Memory copy: CPU-MEM to GPU-MEM
     if (cudaMemcpyAsync(cuda_mem_input, input_buffer, input_mem_size, cudaMemcpyHostToDevice, stream) != cudaSuccess) {
         std::cout << "ERROR: CUDA memory copy of input failed, size = " << input_mem_size << " bytes" << std::endl;
         return -1;
@@ -162,7 +162,7 @@ int run(std::string engile_file_path, std::string image_file_path)
     // 同步结果
     cudaStreamSynchronize(stream);
 
-    /* PART IV: Model outputs postpreocess. */
+    /* PART IV: Model outputs postprocessing. */
 
     // 分配输出内存空间: "339", "392", "445", "output"
     std::vector<float*> output_buffers;
@@ -186,7 +186,7 @@ int run(std::string engile_file_path, std::string image_file_path)
     std::vector<int> class_ids;
     float* p = output_buffers[3];
     int step = 85, proposal_count = 25200;
-    float score_threshold = 0.5, nms_theshold = 0.45;
+    float score_threshold = 0.5, nms_threshold = 0.45;
     float scale = 1.0;
     for (size_t i = 0; i < proposal_count; i++) {
 
@@ -217,7 +217,7 @@ int run(std::string engile_file_path, std::string image_file_path)
 
     // Perform non maximum suppression to eliminate redundant overlapping boxes with lower confidences
     std::vector<int> indices;
-    cv::dnn::NMSBoxes(boxes, scores, score_threshold, nms_theshold, indices);
+    cv::dnn::NMSBoxes(boxes, scores, score_threshold, nms_threshold, indices);
 
     // Collect the detection result
     std::vector<Result> results;
