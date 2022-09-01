@@ -1,6 +1,8 @@
 # yolov5-trt
 Minimal code for YOLO v5 inference with TensorRT (C++).
 
+Tutorial: https://yinguobing.com/a-quick-tutorial-for-yolov5-tensorrt-cpp-inference/
+
 ## Prerequisites
 
 To build and run this program, the following items are required.
