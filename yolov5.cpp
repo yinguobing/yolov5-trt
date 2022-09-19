@@ -39,7 +39,7 @@ int run(std::string engine_file_path, std::string image_file_path)
 {
     /* PART I: Initialize the YOLOV5 model */
 
-    // 读取engine文件载入模型
+    // Load the TRT engine file. 读取engine文件载入模型
     std::ifstream engine_file(engine_file_path, std::ios::binary);
     if (engine_file.fail()) {
         std::cout << "Failed to read model file." << std::endl;
@@ -112,7 +112,7 @@ int run(std::string engine_file_path, std::string image_file_path)
         }
     }
 
-    // 一旦输出内存申请失败怎么办
+    // What if memory allocation failed? 一旦输出内存申请失败怎么办
     if (!output_mem_initialized) {
         for (auto p : bindings) {
             cudaFree(p);
@@ -152,19 +152,16 @@ int run(std::string engine_file_path, std::string image_file_path)
 
     /* PART III: Run inference */
 
-    // 异步执行推演
+    // This is asynchronous. 异步执行推演
     bool status = context->enqueueV2(bindings, stream, nullptr);
     if (!status) {
         std::cout << "ERROR: TensorRT inference failed." << std::endl;
         return -1;
     }
 
-    // 同步结果
-    cudaStreamSynchronize(stream);
-
     /* PART IV: Model outputs postprocessing. */
 
-    // 分配输出内存空间: "339", "392", "445", "output"
+    // Output memory allocation. 分配输出内存空间: "339", "392", "445", "output"
     std::vector<float*> output_buffers;
     for (size_t i = 0; i < output_mem_sizes.size(); i++) {
         float* buf = new float[output_mem_sizes[i] / sizeof(float)];
@@ -180,7 +177,10 @@ int run(std::string engine_file_path, std::string image_file_path)
         }
     }
 
-    // YOLOV5后处理
+    // Synchronize the results. 同步结果
+    cudaStreamSynchronize(stream);
+
+    // Postprocessing of YOLOV5. 后处理
     std::vector<float> scores;
     std::vector<cv::Rect> boxes;
     std::vector<int> class_ids;
